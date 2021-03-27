@@ -56,6 +56,7 @@ scipy==1.5.4
 seaborn==0.11.1
 sip==6.0.3
 snowballstemmer==2.0.0
+sounddevice==0.4.1
 soupsieve==2.2
 SpeechRecognition==3.8.1
 sphinxcontrib-applehelp==1.0.2
