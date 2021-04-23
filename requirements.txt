@@ -28,7 +28,6 @@ Js2Py==0.70
 kiwisolver==1.3.1
 matplotlib==3.3.3
 mccabe==0.6.1
-nltk==3.5
 numpy==1.19.5
 pandas==1.1.5
 parso==0.8.0
