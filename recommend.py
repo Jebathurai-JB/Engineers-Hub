@@ -2,23 +2,29 @@
 from flask import Flask, render_template, request, url_for, redirect
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-import speech_recognition as sr
+from nltk.stem import WordNetLemmatizer 
 import pandas as pd
+import random
+import pickle
+import string
 
-# import pytesseract
-# pytesseract.pytesseract.tesseract_cmd=r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
+# Reading the dataset
+data = pd.read_csv('engineering_data.csv')	
 
+# TFIDF vectorizer for recommendation
+model1 = TfidfVectorizer(max_features=14000)	
+model2 = TfidfVectorizer(max_features=1800)	
 
-data = pd.read_csv('engineering_data.csv')		#reading the data
+#vectorizer and classifier for sentiment analysis
+vectorizer = pickle.load(open('sentiment_transformer.pkl', 'rb'))
+classifier = pickle.load(open('sentiment_model.pkl', 'rb')) #SVM algorithm
 
-model = TfidfVectorizer(max_features=None)	
+x = model1.fit_transform(data['recommend char'])
+y = model2.fit_transform(data['recommend char2'])
 
-x = model.fit_transform(data['recommend char'])
+cosine_recommend1 = cosine_similarity(x, x)	
 
-cosine_recommend = cosine_similarity(x,x)		#cosine similarity for authors
-
-indices = pd.Series(data.index, index=data['title'].str.lower()).drop_duplicates()		#indices of the book title
-
+indices = pd.Series(data.index, index=data['title'].str.lower()).drop_duplicates()	
 
 def suggestion_func(x):
 	d = data['lower title']
@@ -48,156 +54,143 @@ def suggestion_func(x):
 	            index.append(i)
 	return index	            
 
-
-def recommend(book_title, sig=cosine_recommend):
+def recommend1(book_title, sig=cosine_recommend1):
     idx = indices[book_title]
-    sig_scores = list(enumerate(cosine_recommend[idx]))
+    sig_scores = list(enumerate(cosine_recommend1[idx]))
     sig_scores = sorted(sig_scores, key=lambda x: x[1], reverse=True)
     sig_scores = sig_scores[1:11]
     book_indices = [i[0] for i in sig_scores]
     a = data[['title', 'author', 'medium image', 'clean desc']].iloc[book_indices]
     a = a.reset_index(drop=True)
-    b = data[['title', 'author', 'desc', 'google_drive', 'pages','publisher','year', 'language',
-    'file', 'large image']].iloc[idx]
+    b = data[['title', 'author', 'desc', 'pages', 'publisher', 'year', 'language', 'file', 
+    'large image']].iloc[idx]
     return a, b, idx
+
+def recommend2(searched_books):
+	searched_words = model2.transform(searched_books)
+	cosine_recommend2 = cosine_similarity(searched_words, y)
+	sig_scores = list(enumerate(cosine_recommend2[0]))
+	sig_scores = sorted(sig_scores, key=lambda x: x[1], reverse=True)
+	sig_scores = sig_scores[1:19]
+	book_indices = [i[0] for i in sig_scores]
+	a = data[['title', 'large image']].iloc[book_indices]
+	a = a.reset_index(drop=True)
+	return a
+
+searched_books = []  #list to store the searched books
+def show_searched_book():   #This function is used to activate the list (searched_books)
+	return searched_books       # Will return the list
+
+def append_searched_book(x):# This function is used to append the book_title in the searched boooks list
+	searched_books = show_searched_book() # this is used to activate the the list....
+	searched_books = searched_books.insert(0, x)   # adding the book title in the list
+	return searched_books
+
+lemmatizer = WordNetLemmatizer()
+def cleaning(text):
+    # Removing punctuations
+    text = ''.join([char for char in text if char not in string.punctuation])   
+    #using lemmatization
+
+    text = ' '.join([lemmatizer.lemmatize(word) for word in text.split()])    
+    #Returning the clean content
+    return text
 
 
 app = Flask(__name__)
 
-
 @app.route('/', methods=['GET', 'POST'])
 def home():
-	
+
 	if request.method == 'POST':	
-		try:
-			name = request.form['speech']
-			if name == 'microphone':
-				r = sr.Recognizer()
-				with sr.Microphone() as source:
-					r.pause_threshold = 0.6
-					audio = r.listen(source)
-					try:
-						ask = r.recognize_google(audio, language='en-us')
-						book_title = ask
-						book_title = book_title.lower()
-					except:
-						return render_template('home.html', title='Engineers Hub')
 
+		book_title = request.form['book']
+		book_title = book_title.lower()
 
-					if book_title not in list(data['title'].str.lower()):
-						suggestion = suggestion_func(book_title)
-						no_of_books = len(suggestion)
+		searched_books = append_searched_book(book_title)
 
-						search_title = book_title.title()
-						book_title = data['title']
-						book_author = data['author']
-						publisher = data['publisher']
-						image = data['medium image']
-						year = data['year']	
-						language = data['language']	
-						file = data['file']
+		if book_title not in list(data['title'].str.lower()):
+			suggestion = suggestion_func(book_title)
+			no_of_books = len(suggestion)
 
-						if len(suggestion) == 0:
-							return render_template('unavailable.html', title='Engineers Hub',
-								search_title=search_title)
+			search_title = book_title.title()
+			book_title = data['title']
+			book_author = data['author']
+			publisher = data['publisher']
+			image = data['medium image']
+			year = data['year']	
+			language = data['language']	
+			file = data['file']
 
-						else:
-							return render_template('books.html', title='Engineers Hub',book_title=book_title, image=image,
-							book_author=book_author, publisher=publisher, year=year, language=language, file=file,
-							suggestion=suggestion, search_title=search_title, no_of_books=no_of_books,
-							download_link=download_link) 
-
-					else:
-						recommendation, info, index = recommend(book_title, cosine_recommend)
-						book_title = info['title']
-						book_author = info['author']
-						book_desc = info['desc']
-						book_download_link = info['google_drive']
-						image = info['large image']
-						publisher = info['publisher']
-						book_page = info['pages']
-						year = info['year']	
-						language = info['language']	
-						file = info['file']
-
-						return render_template('recommend.html', title='Engineers Hub' ,book_title=book_title, book_author=book_author,
-							book_desc=book_desc,book_download_link=book_download_link,image=image, publisher=publisher,
-							book_page=book_page, year=year,language=language, file=file, recommendation=recommendation)
-
-
-
-			
-		except:
-			book_title = request.form['book']
-			book_title = book_title.lower()
-
-			if book_title not in list(data['title'].str.lower()):
-				suggestion = suggestion_func(book_title)
-				no_of_books = len(suggestion)
-
-				search_title = book_title.title()
-				book_title = data['title']
-				book_author = data['author']
-				publisher = data['publisher']
-				image = data['medium image']
-				year = data['year']	
-				language = data['language']	
-				file = data['file']
-
-				if len(suggestion) == 0:
-					return render_template('unavailable.html', title='Engineers Hub',
-						search_title=search_title)
-
-				else:
-					return render_template('books.html', title='Engineers Hub',book_title=book_title, image=image,
-					book_author=book_author, publisher=publisher, year=year, language=language, file=file,
-					suggestion=suggestion, search_title=search_title, no_of_books=no_of_books) 
-
+			if len(suggestion) == 0:
+				return render_template('unavailable.html', title='Engineers Hub',
+					search_title=search_title)
 			else:
-				recommendation, info, index = recommend(book_title, cosine_recommend)
-				book_title = info['title']
-				book_author = info['author']
-				book_desc = info['desc']
-				book_download_link = info['google_drive']
-				image = info['large image']
-				publisher = info['publisher']
-				book_page = info['pages']
-				year = info['year']	
-				language = info['language']	
-				file = info['file']
+				return render_template('books.html', title='Engineers Hub',book_title=book_title, image=image,
+				book_author=book_author, publisher=publisher, year=year, language=language, file=file,
+				suggestion=suggestion, search_title=search_title, no_of_books=no_of_books) 
 
-				return render_template('recommend.html', title='Engineers Hub' ,book_title=book_title, book_author=book_author,
-					book_desc=book_desc,book_download_link=book_download_link,image=image, publisher=publisher,
-					book_page=book_page, year=year,language=language, file=file, recommendation=recommendation)
+		else:
+			recommendation, info, index = recommend1(book_title, cosine_recommend1)
+			book_title = info['title']
+			book_author = info['author']
+			book_desc = info['desc']
+			image = info['large image']
+			publisher = info['publisher']
+			book_page = info['pages']
+			year = info['year']	
+			language = info['language']	
+			file = info['file']
 
+			return render_template('recommend.html', title='Engineers Hub',book_title=book_title, 
+				book_author=book_author, book_desc=book_desc,image=image, publisher=publisher,
+				book_page=book_page, year=year,language=language, file=file, recommendation=recommendation)
+	
 	else:
-		return render_template('home.html', title='Engineers Hub')
+		searched_books = show_searched_book()
+		no_of_searched_books = len(searched_books)
+		if no_of_searched_books > 10:
+			searched_books = searched_books[:10]
+		else:
+			pass
 
+		searched_books_str = ''
+		for i in searched_books:
+			searched_books_str = ' '.join(searched_books)
+		searched_books_str = [searched_books_str]
 
-@app.route('/team')
-def team():
-	return render_template('team.html', title='Engineers Hub Team')
+		if no_of_searched_books > 0:
+			most_popular_books = recommend2(searched_books_str)
+			book_title = most_popular_books['title']
+			image = most_popular_books['large image']
+		else:
+			image = None
+			book_title = None
+
+		return render_template('home.html', title='Engineers Hub', image=image, book_title=book_title, 
+			no_of_searched_books=no_of_searched_books)
+
+@app.route('/contact', methods=['GET', 'POST'])
+def contact():
+	if request.method == 'POST':
+		name = request.form['name']
+		message = request.form['message']
+		len_message = len(message)
+		message = message.lower()
+		clean_message = cleaning(message) 
+		message_vec = vectorizer.transform([clean_message])
+		result = classifier.predict(message_vec)
+		len_result = len(result)
+		return render_template('contact.html', title='Engineers Hub', name=name, result=result,
+			len_message=len_message, len_result=len_result)
+	else:
+		return render_template('contact.html', title='Engineers Hub')
 
 
 @app.route('/about')
 def about():
 	return render_template('about.html', title='About')
 
-#camera not in production yet ----------------------------------------------------------------------
-# @app.route('/camera', methods=['GET', 'POST'])
-# def capturephoto():
-# 	if request.method == 'POST':
-
-# 		Img = request.data
-# 		imgdata = base64.b64decode(Img)
-# 		char = request.form['useless']
-# 		# text = pytesseract.image_to_string(Img)
-# 		return render_template('new.html', title='Not None', Img=imgdata, char=char)
-# 		# return render_template('new.html', title='None')
-
-# 	else:
-# 		return render_template('webcam.html', title='None')
-#-----------------------------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     app.run(debug=True)
