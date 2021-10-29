@@ -1,0 +1,43 @@
+{% extends 'layout.html' %}
+
+{% block title %}
+{{title}}
+{% endblock title %}
+
+{% block body %}
+
+<body bgcolor="white">
+
+<header class="p-3 bg-dark text-white">
+  <div class="container">
+    <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+        <img src="{{url_for('static', filename='home_image/unnamed.png')}}" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="w-12 h-12 text-white p-2 bg-white-500 rounded-full" viewBox="0 0 24 24">
+        <span class="ml-1 text-xl"><b>Engineers Hub</b></span>&nbsp; &nbsp; &nbsp; &nbsp; 
+
+      <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+        <li><a href="{{url_for('home')}}" class="nav-link px-2 text-white">Home</a></li>
+        <li><a href="{{url_for('contact')}}" class="nav-link px-2 text-white">Contact</a></li>
+        <li><a href="{{url_for('about')}}" class="nav-link px-2 text-white">About</a></li>
+      </ul>
+
+      <div class="text-end">
+        <a href="https://github.com/Jebathurai-JB/Engineers-Hub" target="_blank"><button class="btn btn-warning" style="border-radius:20px"><i class="fa fa-github" style="font-size:36px"></i></button></a>
+      
+      </div>
+    </div>
+  </div>
+</header>
+
+<br><br>
+<center>
+	<img src="{{url_for('static', filename='home_image/warning_image.jpg')}}" width="300" height="300" >
+  <br><br>
+  <h5 style="color: black">SORRY!!! couldn't find <b>{{search_title}}</b></h5>
+</center>
+<br>
+<center>
+  <a class="btn btn-outline-danger" href="{{url_for('home')}}" role="button"><b>Back to Search</b></a>
+</center><br><br><br>
+</body>
+
+{% endblock body %}

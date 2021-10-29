@@ -1,0 +1,105 @@
+{% extends 'layout.html' %}
+
+{% block title %}
+{{title}}
+{% endblock title %}
+
+{% block body %}
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css?family=IBM+Plex+Sans&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+  <!-- Bootstrap -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+  <!-- Auto Complete -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tarekraafat/autocomplete.js@7.2.0/dist/css/autoComplete.min.css">
+  <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='style.css') }}">
+
+<body background="{{url_for('static', filename='home_image/wallpaper1.jpg')}}">
+
+  <header class="p-3 bg-dark text-white">
+    <div class="container">
+      <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+          <img src="{{url_for('static', filename='home_image/unnamed.png')}}" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="w-12 h-12 text-white p-2 bg-white-500 rounded-full" viewBox="0 0 24 24">
+          <span class="ml-1 text-xl"><b>Engineers Hub</b></span>&nbsp; &nbsp; &nbsp; &nbsp; 
+
+        <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+          <li><a href="{{url_for('home')}}" class="nav-link px-2 text-white">Home</a></li>
+          <li><a href="{{url_for('contact')}}" class="nav-link px-2 text-white">Contact</a></li>
+          <li><a href="{{url_for('about')}}" class="nav-link px-2 text-white">About</a></li>
+        </ul>
+
+        <div class="text-end">
+          <a href="https://github.com/Jebathurai-JB/Engineers-Hub" target="_blank"><button class="btn btn-warning" style="border-radius:20px"><i class="fa fa-github" style="font-size:36px"></i></button></a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+	<br><br><br>
+  <center>
+  <h1 style="font-family: Copperplate, Papyrus, fantasy;color: black"><b> Engineers Hub </b></h1>
+
+	<br><br><br><br>
+  
+  <br>
+
+  <form action="/" method="POST">
+      <input type="text" name="book" class="book form-control" id="autoComplete" autocomplete="off" placeholder="Enter the Book Name" style="background-color: #ffffff;text-align: center;border-color:#eb2124;width: 60%;color: #181818" required="required" />
+      <br><br>
+      <div align="center">
+          <button class="btn btn-danger btn-lg " tabindex="-1" type="submit" role="button" aria-disabled="true">Enter</button>    
+      </div>
+      <br><br>
+
+  </form>
+  </center>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tarekraafat/autocomplete.js@7.2.0/dist/js/autoComplete.min.js"></script>
+    <script type="text/javascript" src="{{url_for('static', filename='autocomplete.js')}}"></script>
+
+{% if no_of_searched_books != 0 %}
+  <section class="text-gray-600 body-font">
+    <div class="container py-15 mx-auto">
+      <h5><b>Most Popular Books...</b></h5>
+      <!-- <hr> -->
+      <div class="container px-5 py-4" style="border-width: 2px; border-color:grey; background-color: white">
+        <div class="flex flex-wrap -m-1 align-items-center justify-content-center">
+
+          {% for index in range(18)%}
+            <div class="lg:w-1/5 md:w-1/5 sm:w-1/5 xs:w-1/3 p-1 w-full" style="width: 160px">
+              <center>
+                <form action="/" method="POST">
+                  <input type="hidden" name="book" value="{{book_title[index]}}" /> 
+                  <a href="#" onclick="this.parentNode.submit();"><img alt="books" style="width: 140px; border: 4px solid black;"src="{{image[index]}}"></a>
+                </form>
+              </center>
+            </div>
+          {% endfor %}
+
+        </div>
+      </div>
+    </div>
+  </section>
+  <br>
+
+{% endif %}
+
+
+
+
+
+</body>
+
+
+{% endblock body %}
+
+
